@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -43,6 +43,7 @@ export default function WallPage({ authMode }: WallPageProps) {
   const selectedTool = useBoardModeStore((state) => state.mode);
   const setSelectedTool = useBoardModeStore((state) => state.setMode);
   const editorState = useEditorStore();
+  const [smartMode, setSmartMode] = useState(false);
 
   const hasStoredToken = authToken.has();
   const currentUser = meQuery.data ?? null;
@@ -173,7 +174,9 @@ export default function WallPage({ authMode }: WallPageProps) {
         onLogout={handleLogout}
         onRegister={() => navigate("/register")}
         onToggleLike={handleToggleLike}
+        onToggleSmartMode={() => setSmartMode((current) => !current)}
         selectedTool={selectedTool}
+        smartMode={smartMode}
         onCanvasClick={handleCanvasClick}
       />
 

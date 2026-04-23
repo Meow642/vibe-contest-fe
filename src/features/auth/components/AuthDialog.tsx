@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
-import { EyeIcon, EyeOffIcon, LoaderCircleIcon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, LoaderCircleIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api";
 import {
@@ -18,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -47,7 +47,6 @@ export default function AuthDialog({
   open,
   onOpenChange,
 }: AuthDialogProps) {
-  const navigate = useNavigate();
   const loginMutation = useLoginMutation();
   const registerMutation = useRegisterMutation();
 
@@ -59,6 +58,7 @@ export default function AuthDialog({
 
   const isLogin = mode === "login";
   const isSubmitting = loginMutation.isPending || registerMutation.isPending;
+  const canSubmit = username.trim().length > 0 && password.length > 0 && !isSubmitting;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -117,28 +117,33 @@ export default function AuthDialog({
     }
   }
 
-  function goTo(nextMode: AuthMode) {
-    navigate(nextMode === "login" ? "/login" : "/register", { replace: true });
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[min(92vw,33rem)] rounded-[28px] border border-white/80 bg-white/96 px-6 pb-6 pt-7 shadow-[0_28px_80px_rgba(15,23,42,0.16)] sm:px-8"
+        showCloseButton={false}
+        className="w-[400px] max-w-[calc(100vw-2rem)] gap-0 rounded-[20px] border-0 bg-white p-6 shadow-[0_24px_64px_rgba(15,23,42,0.14)] sm:max-w-[400px]"
       >
-        <DialogHeader className="gap-2 pr-10">
-          <DialogTitle className="text-[1.75rem] font-semibold tracking-tight text-slate-950">
-            {isLogin ? "账号登录解锁更多功能" : "注册为 Talon 用户"}
+        <DialogClose asChild>
+          <button
+            aria-label="关闭"
+            className="absolute right-5 top-5 flex size-6 items-center justify-center text-slate-400 transition hover:text-slate-600"
+            type="button"
+          >
+            <XIcon className="size-5" />
+          </button>
+        </DialogClose>
+
+        <DialogHeader className="gap-0 pr-8">
+          <DialogTitle className="text-[20px] font-semibold leading-7 tracking-tight text-[#000311]">
+            {isLogin ? "账号登录解锁更多功能" : "注册为Talon用户"}
           </DialogTitle>
-          <DialogDescription className="text-sm leading-6 text-slate-500">
-            {isLogin
-              ? "登录后即可发表评论、移动自己的贴纸，并参与实时互动。"
-              : "注册成功后会直接进入登录态，后续可继续完善昵称和头像。"}
+          <DialogDescription className="sr-only">
+            {isLogin ? "登录表单" : "注册表单"}
           </DialogDescription>
         </DialogHeader>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
+        <form className="mt-6 flex flex-col gap-3" onSubmit={handleSubmit}>
+          <div>
             <Label className="sr-only" htmlFor="auth-username">
               用户账号
             </Label>
@@ -146,7 +151,7 @@ export default function AuthDialog({
               id="auth-username"
               aria-invalid={Boolean(errors.username)}
               autoComplete="username"
-              className="h-12 rounded-2xl border-slate-200 bg-white px-4 text-base shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]"
+              className="h-12 rounded-xl border-slate-200 bg-white px-4 text-sm text-[#000311] shadow-none placeholder:text-slate-400"
               placeholder="输入用户账号"
               value={username}
               onChange={(event) => {
@@ -155,11 +160,11 @@ export default function AuthDialog({
               }}
             />
             {errors.username ? (
-              <p className="text-xs text-rose-500">{errors.username}</p>
+              <p className="mt-1 text-xs text-rose-500">{errors.username}</p>
             ) : null}
           </div>
 
-          <div className="space-y-2">
+          <div>
             <Label className="sr-only" htmlFor="auth-password">
               登录密码
             </Label>
@@ -168,8 +173,8 @@ export default function AuthDialog({
                 id="auth-password"
                 aria-invalid={Boolean(errors.password)}
                 autoComplete={isLogin ? "current-password" : "new-password"}
-                className="h-12 rounded-2xl border-slate-200 bg-white px-4 pr-11 text-base shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]"
-                placeholder="输入 6-30 位密码"
+                className="h-12 rounded-xl border-slate-200 bg-white px-4 pr-11 text-sm text-[#000311] shadow-none placeholder:text-slate-400"
+                placeholder="输入6-30位密码"
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(event) => {
@@ -184,67 +189,61 @@ export default function AuthDialog({
                 onClick={() => setShowPassword((current) => !current)}
               >
                 {showPassword ? (
-                  <EyeOffIcon className="size-4" />
-                ) : (
                   <EyeIcon className="size-4" />
+                ) : (
+                  <EyeOffIcon className="size-4" />
                 )}
               </button>
             </div>
             {errors.password ? (
-              <p className="text-xs text-rose-500">{errors.password}</p>
+              <p className="mt-1 text-xs text-rose-500">{errors.password}</p>
             ) : null}
           </div>
 
+          {errors.form ? (
+            <div className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs text-rose-500">
+              {errors.form}
+            </div>
+          ) : null}
+
+          <Button
+            className="mt-1 h-12 w-full rounded-xl bg-[#000311] text-sm font-medium text-white shadow-none hover:bg-[#1f2937] disabled:cursor-not-allowed disabled:bg-[#f2f3f5] disabled:text-slate-400 disabled:opacity-100"
+            disabled={!canSubmit}
+            type="submit"
+          >
+            {isSubmitting ? (
+              <LoaderCircleIcon className="size-4 animate-spin" />
+            ) : null}
+            {isLogin ? "登录" : "注册/登录"}
+          </Button>
+
           {isLogin ? (
-            <Label className="flex items-center gap-2 text-sm text-slate-500">
+            <Label className="mt-2 flex w-fit items-center gap-2 text-sm font-normal text-[#000311]">
               <Checkbox
                 checked={remember}
+                className="size-[18px] rounded-full border-slate-300 data-checked:border-[#1976f0] data-checked:bg-[#1976f0] [&_svg]:size-3"
                 onCheckedChange={(checked) => setRemember(checked === true)}
               />
               自动登录
             </Label>
           ) : null}
 
-          {errors.form ? (
-            <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-500">
-              {errors.form}
-            </div>
-          ) : null}
-
-          <Button
-            className="h-12 w-full rounded-2xl bg-slate-950 text-base font-medium text-white shadow-[0_16px_32px_rgba(15,23,42,0.18)] hover:bg-slate-800"
-            disabled={isSubmitting}
-            type="submit"
-          >
-            {isSubmitting ? (
-              <LoaderCircleIcon className="size-4 animate-spin" />
-            ) : null}
-            {isLogin ? "登录" : "注册 / 登录"}
-          </Button>
-
-          <div className="space-y-3 pt-1 text-center">
-            <p className="text-xs leading-6 text-slate-400">
-              {isLogin ? "登录" : "注册"}视为您已阅读并同意
-              <button className="mx-1 text-sky-600 transition hover:text-sky-700" type="button">
-                用户协议
-              </button>
-              、
-              <button className="ml-1 text-sky-600 transition hover:text-sky-700" type="button">
-                隐私政策
-              </button>
-            </p>
-
-            <p className="text-sm text-slate-500">
-              {isLogin ? "还没有账号？" : "已有账号？"}
-              <button
-                className="ml-1 font-medium text-slate-950 transition hover:text-sky-700"
-                type="button"
-                onClick={() => goTo(isLogin ? "register" : "login")}
-              >
-                {isLogin ? "立即注册" : "去登录"}
-              </button>
-            </p>
-          </div>
+          <p className="mt-4 text-center text-xs leading-5 text-slate-400">
+            {isLogin ? "登录" : "注册"}视为您已阅读并同意
+            <button
+              className="mx-1 text-[#1976f0] transition hover:text-sky-700"
+              type="button"
+            >
+              用户协议
+            </button>
+            、
+            <button
+              className="text-[#1976f0] transition hover:text-sky-700"
+              type="button"
+            >
+              隐私政策
+            </button>
+          </p>
         </form>
       </DialogContent>
     </Dialog>

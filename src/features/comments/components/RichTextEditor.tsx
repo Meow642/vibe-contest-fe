@@ -11,7 +11,6 @@ import {
   StrikethroughIcon,
   UnderlineIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface RichTextEditorProps {
@@ -44,20 +43,19 @@ function ToolbarButton({
   onClick,
 }: ToolbarButtonProps) {
   return (
-    <Button
+    <button
       aria-label={label}
       className={cn(
-        "size-8 rounded-xl border border-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-900",
-        active ? "bg-slate-950 text-white hover:bg-slate-950 hover:text-white" : "",
+        "flex size-8 items-center justify-center rounded-md transition-colors",
+        active ? "text-[#000311]" : "text-slate-400",
+        disabled ? "cursor-not-allowed opacity-40" : "hover:text-[#000311]",
       )}
       disabled={disabled}
-      size="icon-sm"
       type="button"
-      variant="ghost"
       onClick={onClick}
     >
       {children}
-    </Button>
+    </button>
   );
 }
 
@@ -84,7 +82,7 @@ export default function RichTextEditor({
     editorProps: {
       attributes: {
         class:
-          "min-h-[15rem] rounded-[24px] border border-slate-200 bg-white px-4 py-4 text-[15px] leading-7 text-slate-800 outline-none [&_.is-editor-empty:first-child::before]:pointer-events-none [&_.is-editor-empty:first-child::before]:float-left [&_.is-editor-empty:first-child::before]:h-0 [&_.is-editor-empty:first-child::before]:text-slate-400 [&_.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5",
+          "h-full text-[15px] leading-7 text-[#000311] outline-none [&_.is-editor-empty:first-child::before]:pointer-events-none [&_.is-editor-empty:first-child::before]:float-left [&_.is-editor-empty:first-child::before]:h-0 [&_.is-editor-empty:first-child::before]:text-slate-400 [&_.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5",
       },
     },
     onUpdate: ({ editor: currentEditor }) => {
@@ -105,15 +103,15 @@ export default function RichTextEditor({
   }) ?? defaultToolbarState;
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-1 rounded-2xl border border-slate-200 bg-slate-50/70 p-1.5">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className="flex items-center gap-3">
         <ToolbarButton
           active={state.bold}
           disabled={!editor?.can().chain().focus().toggleBold().run()}
           label="加粗"
           onClick={() => editor?.chain().focus().toggleBold().run()}
         >
-          <BoldIcon className="size-4" />
+          <BoldIcon className="size-5" />
         </ToolbarButton>
 
         <ToolbarButton
@@ -122,7 +120,7 @@ export default function RichTextEditor({
           label="斜体"
           onClick={() => editor?.chain().focus().toggleItalic().run()}
         >
-          <ItalicIcon className="size-4" />
+          <ItalicIcon className="size-5" />
         </ToolbarButton>
 
         <ToolbarButton
@@ -131,7 +129,7 @@ export default function RichTextEditor({
           label="下划线"
           onClick={() => editor?.chain().focus().toggleUnderline().run()}
         >
-          <UnderlineIcon className="size-4" />
+          <UnderlineIcon className="size-5" />
         </ToolbarButton>
 
         <ToolbarButton
@@ -140,17 +138,15 @@ export default function RichTextEditor({
           label="删除线"
           onClick={() => editor?.chain().focus().toggleStrike().run()}
         >
-          <StrikethroughIcon className="size-4" />
+          <StrikethroughIcon className="size-5" />
         </ToolbarButton>
-
-        <span className="mx-1 h-5 w-px bg-slate-200" />
 
         <ToolbarButton
           active={state.bulletList}
           label="无序列表"
           onClick={() => editor?.chain().focus().toggleBulletList().run()}
         >
-          <ListIcon className="size-4" />
+          <ListIcon className="size-5" />
         </ToolbarButton>
 
         <ToolbarButton
@@ -158,11 +154,13 @@ export default function RichTextEditor({
           label="有序列表"
           onClick={() => editor?.chain().focus().toggleOrderedList().run()}
         >
-          <ListOrderedIcon className="size-4" />
+          <ListOrderedIcon className="size-5" />
         </ToolbarButton>
       </div>
 
-      <EditorContent editor={editor} />
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <EditorContent className="h-full" editor={editor} />
+      </div>
     </div>
   );
 }

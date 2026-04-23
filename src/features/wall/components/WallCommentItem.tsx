@@ -1,10 +1,11 @@
 import { memo, useRef } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
-import { toLogical } from "@/features/board/coords";
+import { clampLogicalPosition, toLogical } from "@/features/board/coords";
 import CommentCard from "@/features/comments/components/CommentCard";
 import type { Comment } from "@/features/comments/types";
 import { getCommentWallStyle } from "@/features/comments/utils";
 import { socket } from "@/lib/realtime/socket";
+import { cn } from "@/lib/utils";
 import type { BoardMode } from "@/stores/board-mode";
 import { useDragStore } from "@/stores/drag";
 
@@ -13,10 +14,12 @@ interface WallCommentItemProps {
   comment: Comment;
   currentUserId: number | null;
   layout?: "wall" | "grid";
+  noteClassName?: string;
   onEdit: (comment: Comment) => void;
   onPersistDrag: (commentId: number, next: { x: number; y: number }) => Promise<void>;
   onToggleLike: (comment: Comment) => void;
   selectedTool: BoardMode;
+  tapeClassName?: string;
 }
 
 function WallCommentItem({
@@ -24,10 +27,12 @@ function WallCommentItem({
   comment,
   currentUserId,
   layout = "wall",
+  noteClassName,
   onEdit,
   onPersistDrag,
   onToggleLike,
   selectedTool,
+  tapeClassName,
 }: WallCommentItemProps) {
   const dragPosition = useDragStore((state) => state.positions[comment.id]);
   const clearPosition = useDragStore((state) => state.clear);
@@ -39,6 +44,7 @@ function WallCommentItem({
     x: comment.x,
     y: comment.y,
   });
+  const pointerOffsetRef = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
   const lastSentAtRef = useRef(0);
 
   const renderedComment = dragPosition
@@ -57,6 +63,8 @@ function WallCommentItem({
         comment={renderedComment}
         isLikePending={activeLikeCommentId === comment.id}
         layout="grid"
+        noteClassName={noteClassName}
+        tapeClassName={tapeClassName}
         onDoubleClick={isOwn ? () => onEdit(comment) : undefined}
         onLikeClick={() => onToggleLike(comment)}
       />
@@ -89,25 +97,23 @@ function WallCommentItem({
       return;
     }
 
-    const next = getLogicalPosition(event);
+    const pointer = getLogicalPosition(event);
 
-    if (!next) {
+    if (!pointer) {
       return;
     }
 
     activePointerIdRef.current = event.pointerId;
+    pointerOffsetRef.current = {
+      dx: comment.x - pointer.x,
+      dy: comment.y - pointer.y,
+    };
     lastValidPositionRef.current = {
-      x: next.x,
-      y: next.y,
+      x: comment.x,
+      y: comment.y,
     };
     lastSentAtRef.current = 0;
     event.currentTarget.setPointerCapture(event.pointerId);
-    setPosition(comment.id, {
-      actorId: currentUserId ?? comment.author.id,
-      rotation: comment.rotation,
-      x: next.x,
-      y: next.y,
-    });
   }
 
   function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
@@ -115,16 +121,18 @@ function WallCommentItem({
       return;
     }
 
-    const next = getLogicalPosition(event);
+    const pointer = getLogicalPosition(event);
 
-    if (!next) {
+    if (!pointer) {
       return;
     }
 
-    lastValidPositionRef.current = {
-      x: next.x,
-      y: next.y,
-    };
+    const next = clampLogicalPosition({
+      x: pointer.x + pointerOffsetRef.current.dx,
+      y: pointer.y + pointerOffsetRef.current.dy,
+    });
+
+    lastValidPositionRef.current = next;
 
     setPosition(comment.id, {
       actorId: currentUserId ?? comment.author.id,
@@ -153,7 +161,13 @@ function WallCommentItem({
 
     activePointerIdRef.current = null;
 
-    const next = getLogicalPosition(event) ?? lastValidPositionRef.current;
+    const pointer = getLogicalPosition(event);
+    const next = pointer
+      ? clampLogicalPosition({
+          x: pointer.x + pointerOffsetRef.current.dx,
+          y: pointer.y + pointerOffsetRef.current.dy,
+        })
+      : lastValidPositionRef.current;
 
     lastValidPositionRef.current = next;
 
@@ -177,9 +191,14 @@ function WallCommentItem({
     }
   }
 
+  const isDragMode = selectedTool === "drag";
+
   return (
     <div
-      className="absolute touch-none"
+      className={cn(
+        "absolute touch-none",
+        isDragMode && "[&_*]:pointer-events-none [&_*]:select-none",
+      )}
       style={getCommentWallStyle(renderedComment)}
       onPointerCancel={handlePointerRelease}
       onPointerDown={handlePointerDown}
@@ -190,6 +209,8 @@ function WallCommentItem({
         canLike={Boolean(currentUserId) && !isOwn}
         comment={renderedComment}
         isLikePending={activeLikeCommentId === comment.id}
+        noteClassName={noteClassName}
+        tapeClassName={tapeClassName}
         onDoubleClick={isOwn ? () => onEdit(comment) : undefined}
         onLikeClick={() => onToggleLike(comment)}
       />

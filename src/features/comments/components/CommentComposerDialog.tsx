@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api";
 import {
@@ -17,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -62,7 +64,6 @@ export default function CommentComposerDialog({
   const updateCommentMutation = useUpdateCommentMutation();
 
   const [contentHtml, setContentHtml] = useState(initialContent);
-  const [plainText, setPlainText] = useState("");
   const [color] = useState<CommentColor>(pickRandomCommentColor);
   const [rotation] = useState(() => pickRandomCommentRotation());
   const [errors, setErrors] = useState<ComposerErrors>({});
@@ -116,56 +117,57 @@ export default function CommentComposerDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[min(92vw,48rem)] rounded-[30px] border border-white/80 bg-white/96 px-6 pb-6 pt-7 shadow-[0_28px_80px_rgba(15,23,42,0.16)] sm:px-7"
+        className="flex h-[452px] w-[600px] max-w-[calc(100vw-2rem)] flex-col gap-0 rounded-[24px] border-0 bg-white p-6 shadow-[0_24px_64px_rgba(15,23,42,0.14)] sm:max-w-[600px]"
+        showCloseButton={false}
         onInteractOutside={(event) => event.preventDefault()}
       >
-        <DialogHeader className="gap-2 pr-10">
-          <DialogTitle className="text-[1.6rem] font-semibold tracking-tight text-slate-950">
+        <DialogClose asChild>
+          <button
+            aria-label="关闭"
+            className="absolute right-5 top-5 flex size-6 items-center justify-center text-slate-400 transition hover:text-slate-600"
+            type="button"
+          >
+            <XIcon className="size-5" />
+          </button>
+        </DialogClose>
+
+        <DialogHeader className="gap-0 pr-8">
+          <DialogTitle className="text-[18px] font-semibold leading-7 tracking-tight text-[#000311]">
             {isEditing ? "编辑想法" : "发表新想法"}
           </DialogTitle>
-          <DialogDescription className="text-sm leading-6 text-slate-500">
-            {isEditing
-              ? "修改后会同步覆盖原有贴纸内容。"
-              : "支持基础富文本。提交后会以便签形式出现在评论墙中央区域，后续可继续编辑与拖动。"}
+          <DialogDescription className="sr-only">
+            {isEditing ? "编辑已发布的想法" : "发表一条新的想法"}
           </DialogDescription>
         </DialogHeader>
 
-        <form className="space-y-5" onSubmit={handleSubmit}>
+        <form
+          className="mt-3 flex min-h-0 flex-1 flex-col"
+          onSubmit={handleSubmit}
+        >
           <RichTextEditor
             initialValue={initialContent}
             key={initialContent}
-            onChange={(html, nextPlainText) => {
+            onChange={(html) => {
               setContentHtml(html);
-              setPlainText(nextPlainText.trim());
-              setErrors((current) => ({ ...current, content: undefined, form: undefined }));
+              setErrors((current) => ({
+                ...current,
+                content: undefined,
+                form: undefined,
+              }));
             }}
           />
 
-          <div className="flex items-center justify-end gap-3">
-            <p className="text-xs text-slate-400">
-              纯文本 {plainText.length}/2000，HTML {contentHtml.length}/5000
-            </p>
-          </div>
-
           {errors.content ? (
-            <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-500">
-              {errors.content}
-            </div>
+            <p className="mt-2 text-xs text-rose-500">{errors.content}</p>
           ) : null}
 
           {errors.form ? (
-            <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-500">
-              {errors.form}
-            </div>
+            <p className="mt-2 text-xs text-rose-500">{errors.form}</p>
           ) : null}
 
-          <div className="flex items-center justify-between gap-4 pt-1">
-            <p className="text-xs leading-6 text-slate-400">
-              当前默认发布位置为画布中央附近，便签角度会自动生成轻微随机偏转。
-            </p>
-
+          <div className="mt-4 flex shrink-0 justify-center">
             <Button
-              className="h-12 min-w-32 rounded-2xl bg-slate-950 px-6 text-base font-medium text-white shadow-[0_16px_32px_rgba(15,23,42,0.18)] hover:bg-slate-800"
+              className="h-12 min-w-[180px] rounded-xl bg-[#000311] px-10 text-sm font-medium text-white shadow-none hover:bg-[#1f2937] disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isPending}
               type="submit"
             >

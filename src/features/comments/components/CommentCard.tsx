@@ -10,8 +10,10 @@ interface CommentCardProps {
   comment: Comment;
   isLikePending?: boolean;
   layout?: "wall" | "grid";
+  noteClassName?: string;
   onDoubleClick?: () => void;
   onLikeClick?: () => void;
+  tapeClassName?: string;
 }
 
 const TAPE_ROTATIONS = [-20, -10, 10, 20, -40] as const;
@@ -22,20 +24,24 @@ function CommentCard({
   comment,
   isLikePending = false,
   layout = "wall",
+  noteClassName,
   onDoubleClick,
   onLikeClick,
+  tapeClassName,
 }: CommentCardProps) {
   const colorMeta = COMMENT_COLOR_META[comment.color];
   const likeDisabled = !canLike || isLikePending || !onLikeClick;
   const tapeRotation = TAPE_ROTATIONS[comment.id % TAPE_ROTATIONS.length];
   const tapeOffset = TAPE_OFFSETS[comment.id % TAPE_OFFSETS.length];
+  const resolvedNoteClass = noteClassName ?? colorMeta.noteClassName;
+  const resolvedTapeClass = tapeClassName ?? colorMeta.tapeClassName;
 
   return (
     <article
       data-comment-card="true"
       className={cn(
-        "relative flex w-[300px] flex-col items-center justify-center gap-4 rounded-[24px] p-6",
-        colorMeta.noteClassName,
+        "relative flex w-[300px] flex-col items-center justify-center gap-4 rounded-[24px] p-6 transition-colors",
+        resolvedNoteClass,
         layout === "grid" ? "mx-auto" : "",
         onDoubleClick ? "cursor-pointer" : "",
       )}
@@ -44,7 +50,7 @@ function CommentCard({
       <div
         className={cn(
           "absolute top-0 h-4 w-[60px] -translate-y-1/2",
-          colorMeta.tapeClassName,
+          resolvedTapeClass,
         )}
         style={{
           left: `${tapeOffset}%`,

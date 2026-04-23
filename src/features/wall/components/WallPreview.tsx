@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import {
   ChevronDownIcon,
@@ -14,6 +15,12 @@ import type { User } from "@/features/auth/types";
 import { LOGICAL_CANVAS_HEIGHT, LOGICAL_CANVAS_WIDTH } from "@/features/comments/constants";
 import AppAvatar from "@/components/AppAvatar";
 import WallCommentItem from "@/features/wall/components/WallCommentItem";
+import {
+  analyzeSentiment,
+  SENTIMENT_STYLE,
+  type Sentiment,
+} from "@/features/wall/sentiment";
+import { cn } from "@/lib/utils";
 import type { BoardMode } from "@/stores/board-mode";
 import { usePresenceStore } from "@/stores/presence";
 import { Button } from "@/components/ui/button";
@@ -40,7 +47,9 @@ interface WallPreviewProps {
   onLogin: () => void;
   onRegister: () => void;
   onLogout: () => void;
+  onToggleSmartMode: () => void;
   selectedTool: BoardMode;
+  smartMode: boolean;
 }
 
 export default function WallPreview({
@@ -60,13 +69,92 @@ export default function WallPreview({
   onRegister,
   onLogout,
   onPointerMode,
+  onToggleSmartMode,
   selectedTool,
+  smartMode,
 }: WallPreviewProps) {
   const isAuthenticated = Boolean(currentUser);
   const hasComments = comments.length > 0;
+  const orderedComments = useMemo(() => [...comments].reverse(), [comments]);
   const presenceUsers = usePresenceStore((state) => state.users);
   const sidebarUsers = presenceUsers.slice(0, 10);
   const overflowUsers = presenceUsers.slice(10);
+
+  const sentimentMap = useMemo(() => {
+    const map = new Map<number, Sentiment>();
+    for (const comment of comments) {
+      map.set(comment.id, analyzeSentiment(comment.content));
+    }
+    return map;
+  }, [comments]);
+
+  const sentimentGroups = useMemo(() => {
+    const positive: Comment[] = [];
+    const neutral: Comment[] = [];
+    const negative: Comment[] = [];
+    for (const comment of comments) {
+      const sentiment = sentimentMap.get(comment.id) ?? "neutral";
+      if (sentiment === "positive") positive.push(comment);
+      else if (sentiment === "negative") negative.push(comment);
+      else neutral.push(comment);
+    }
+    return { positive, neutral, negative };
+  }, [comments, sentimentMap]);
+
+  const sentimentTotals = useMemo(() => {
+    const total = comments.length;
+    const positive = sentimentGroups.positive.length;
+    const neutral = sentimentGroups.neutral.length;
+    const negative = sentimentGroups.negative.length;
+    const positivePercent = total > 0 ? Math.round((positive / total) * 100) : 0;
+    const neutralPercent = total > 0 ? Math.round((neutral / total) * 100) : 0;
+    const negativePercent = total > 0 ? Math.max(0, 100 - positivePercent - neutralPercent) : 0;
+    return {
+      total,
+      positive,
+      neutral,
+      negative,
+      positivePercent,
+      neutralPercent,
+      negativePercent,
+    };
+  }, [comments.length, sentimentGroups]);
+
+  function resolveSentimentClasses(comment: Comment) {
+    if (!smartMode) {
+      return { noteClassName: undefined, tapeClassName: undefined };
+    }
+    const style = SENTIMENT_STYLE[sentimentMap.get(comment.id) ?? "neutral"];
+    return {
+      noteClassName: style.noteClassName,
+      tapeClassName: style.tapeClassName,
+    };
+  }
+
+  function renderSentimentColumn(list: Comment[]) {
+    return (
+      <div className="flex min-w-0 flex-col gap-5">
+        {list.map((comment) => {
+          const { noteClassName, tapeClassName } = resolveSentimentClasses(comment);
+          return (
+            <WallCommentItem
+              activeLikeCommentId={activeLikeCommentId}
+              comment={comment}
+              currentUserId={currentUser?.id ?? null}
+              key={comment.id}
+              layout="grid"
+              noteClassName={noteClassName}
+              onEdit={onEditIdea}
+              onPersistDrag={onPersistDrag}
+              onToggleLike={onToggleLike}
+              selectedTool={selectedTool}
+              tapeClassName={tapeClassName}
+            />
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-screen overflow-hidden bg-[#fcfaf7] text-slate-900">
@@ -191,7 +279,7 @@ export default function WallPreview({
               ) : (
                 <>
                   <Button
-                    className="rounded-2xl border-white/80 bg-white/85 px-4 shadow-sm hover:bg-white"
+                    className="min-w-24 rounded-xl border-white/80 bg-white/85 px-6 shadow-sm hover:bg-white"
                     size="lg"
                     variant="outline"
                     onClick={onRegister}
@@ -199,7 +287,7 @@ export default function WallPreview({
                     注册
                   </Button>
                   <Button
-                    className="rounded-2xl bg-slate-950 px-4 text-white shadow-[0_16px_32px_rgba(15,23,42,0.18)] hover:bg-slate-800"
+                    className="min-w-24 rounded-xl bg-slate-950 px-6 text-white shadow-[0_16px_32px_rgba(15,23,42,0.18)] hover:bg-slate-800"
                     size="lg"
                     onClick={onLogin}
                   >
@@ -221,52 +309,101 @@ export default function WallPreview({
             onClick={onCanvasClick}
           >
             <div className="absolute inset-x-0 top-0 hidden justify-center lg:flex">
-              <div className="rounded-full bg-white/55 px-5 py-2 text-center text-[0.95rem] text-slate-500 backdrop-blur-sm">
-                共反馈{" "}
-                <span className="text-[2rem] font-semibold text-slate-700">{comments.length}</span>{" "}
-                条建议
-              </div>
+              {smartMode && hasComments ? (
+                <div className="pointer-events-auto flex w-[560px] max-w-[90%] overflow-hidden rounded-full bg-white/90 shadow-[0_12px_32px_rgba(15,23,42,0.08)] backdrop-blur-sm">
+                  <div
+                    className={cn(
+                      "flex items-center justify-center py-2 text-sm font-medium transition-[flex-grow] duration-300",
+                      SENTIMENT_STYLE.positive.barClassName,
+                      SENTIMENT_STYLE.positive.barTextClassName,
+                    )}
+                    style={{ flexGrow: sentimentTotals.positive, flexBasis: 0 }}
+                  >
+                    {sentimentTotals.positive > 0
+                      ? `正向${sentimentTotals.positivePercent}%`
+                      : null}
+                  </div>
+                  <div
+                    className={cn(
+                      "flex items-center justify-center py-2 text-sm font-medium transition-[flex-grow] duration-300",
+                      SENTIMENT_STYLE.neutral.barClassName,
+                      SENTIMENT_STYLE.neutral.barTextClassName,
+                    )}
+                    style={{ flexGrow: sentimentTotals.neutral, flexBasis: 0 }}
+                  >
+                    {sentimentTotals.neutral > 0
+                      ? `中性${sentimentTotals.neutralPercent}%`
+                      : null}
+                  </div>
+                  <div
+                    className={cn(
+                      "flex items-center justify-center py-2 text-sm font-medium transition-[flex-grow] duration-300",
+                      SENTIMENT_STYLE.negative.barClassName,
+                      SENTIMENT_STYLE.negative.barTextClassName,
+                    )}
+                    style={{ flexGrow: sentimentTotals.negative, flexBasis: 0 }}
+                  >
+                    {sentimentTotals.negative > 0
+                      ? `负面${sentimentTotals.negativePercent}%`
+                      : null}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-full bg-white/55 px-5 py-2 text-center text-[0.95rem] text-slate-500 backdrop-blur-sm">
+                  共反馈{" "}
+                  <span className="text-[2rem] font-semibold text-slate-700">{comments.length}</span>{" "}
+                  条建议
+                </div>
+              )}
             </div>
 
             {hasComments ? (
-              <>
-                <div
-                  className="mt-6 max-h-full overflow-hidden grid gap-5 md:grid-cols-2 xl:hidden"
-                  data-canvas-surface="true"
-                >
-                  {comments.map((comment) => (
-                    <WallCommentItem
-                      activeLikeCommentId={activeLikeCommentId}
-                      key={comment.id}
-                      comment={comment}
-                      currentUserId={currentUser?.id ?? null}
-                      layout="grid"
-                      onEdit={onEditIdea}
-                      onPersistDrag={onPersistDrag}
-                      onToggleLike={onToggleLike}
-                      selectedTool={selectedTool}
-                    />
-                  ))}
+              smartMode ? (
+                <div className="mt-16 grid h-[calc(100%-4rem)] grid-cols-1 gap-5 overflow-y-auto overscroll-contain pb-4 md:grid-cols-3">
+                  {renderSentimentColumn(sentimentGroups.positive)}
+                  {renderSentimentColumn(sentimentGroups.neutral)}
+                  {renderSentimentColumn(sentimentGroups.negative)}
                 </div>
+              ) : (
+                <>
+                  <div
+                    className="mt-6 max-h-full overflow-y-auto overscroll-contain grid gap-5 pb-4 md:grid-cols-2 xl:hidden"
+                    data-canvas-surface="true"
+                  >
+                    {orderedComments.map((comment) => (
+                      <WallCommentItem
+                        activeLikeCommentId={activeLikeCommentId}
+                        key={comment.id}
+                        comment={comment}
+                        currentUserId={currentUser?.id ?? null}
+                        layout="grid"
+                        onEdit={onEditIdea}
+                        onPersistDrag={onPersistDrag}
+                        onToggleLike={onToggleLike}
+                        selectedTool={selectedTool}
+                      />
+                    ))}
+                  </div>
 
-                <div
-                  className="relative mx-auto mt-14 hidden h-[calc(100%-3.5rem)] max-h-full aspect-[4/3] w-full max-w-[1220px] xl:block"
-                  data-canvas-surface="true"
-                >
-                  {comments.map((comment) => (
-                    <WallCommentItem
-                      activeLikeCommentId={activeLikeCommentId}
-                      key={comment.id}
-                      comment={comment}
-                      currentUserId={currentUser?.id ?? null}
-                      onEdit={onEditIdea}
-                      onPersistDrag={onPersistDrag}
-                      onToggleLike={onToggleLike}
-                      selectedTool={selectedTool}
-                    />
-                  ))}
-                </div>
-              </>
+                  <div
+                    className="relative mx-auto mt-14 hidden h-[calc(100%-3.5rem)] max-h-full aspect-[4/3] w-full max-w-[1220px] xl:block"
+                    data-canvas-surface="true"
+                  >
+                    {orderedComments.map((comment) => (
+                      <WallCommentItem
+                        activeLikeCommentId={activeLikeCommentId}
+                        key={comment.id}
+                        comment={comment}
+                        currentUserId={currentUser?.id ?? null}
+                        onEdit={onEditIdea}
+                        onPersistDrag={onPersistDrag}
+                        onToggleLike={onToggleLike}
+                        selectedTool={selectedTool}
+                      />
+                    ))}
+                  </div>
+                </>
+              )
             ) : (
               <div className="mx-auto mt-14 flex h-[calc(100%-3.5rem)] max-h-full min-h-[18rem] max-w-[1220px] items-center justify-center rounded-[36px] border border-dashed border-slate-200/90 bg-white/35 px-6 text-center backdrop-blur-sm">
                 <div className="max-w-md space-y-3">
@@ -285,10 +422,6 @@ export default function WallPreview({
 
           {isAuthenticated ? (
             <div className="pointer-events-none absolute inset-x-0 bottom-7 flex flex-col items-center gap-3">
-              <div className="rounded-full bg-white/70 px-3 py-1 text-sm text-slate-500 backdrop-blur-sm">
-                发起建议
-              </div>
-
               <div className="pointer-events-auto flex items-center gap-1 rounded-[1.35rem] border border-white/80 bg-white/90 p-2 shadow-[0_18px_48px_rgba(15,23,42,0.12)] backdrop-blur-md">
                 <Button
                   className="rounded-xl"
@@ -314,13 +447,30 @@ export default function WallPreview({
                 >
                   <GripIcon className="size-4" />
                 </Button>
+                <span className="mx-1 h-6 w-px bg-slate-200" />
+                <Button
+                  className={cn(
+                    "rounded-xl px-3 gap-1",
+                    smartMode
+                      ? "bg-[#000311] text-white hover:bg-[#1f2937]"
+                      : "text-slate-700",
+                  )}
+                  size="sm"
+                  variant={smartMode ? "default" : "ghost"}
+                  onClick={onToggleSmartMode}
+                >
+                  <SparklesIcon className="size-4" />
+                  <span className="text-sm font-medium">智能整理</span>
+                </Button>
               </div>
               <div className="rounded-full bg-white/70 px-3 py-1 text-xs text-slate-500 backdrop-blur-sm">
-                {selectedTool === "create"
-                  ? "新增模式：点击空白处新建评论"
-                  : selectedTool === "drag"
-                    ? "拖动模式：仅可拖动自己的卡片"
-                    : "指针模式：用于查看与点击操作"}
+                {smartMode
+                  ? "智能整理：按情绪分组展示，关闭后恢复自由布局"
+                  : selectedTool === "create"
+                    ? "新增模式：点击空白处新建评论"
+                    : selectedTool === "drag"
+                      ? "拖动模式：仅可拖动自己的卡片"
+                      : "指针模式：用于查看与点击操作"}
               </div>
             </div>
           ) : (
