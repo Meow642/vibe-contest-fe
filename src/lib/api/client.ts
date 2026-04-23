@@ -1,6 +1,7 @@
 import axios from "axios";
 import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import { toast } from "sonner";
+import { authToken } from "./auth-token";
 import { ApiError, type ApiErrorBody } from "./types";
 
 export const api = axios.create({
@@ -10,9 +11,12 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  // 预留：未来接入鉴权后在此注入 Authorization
-  // const token = getToken();
-  // if (token) config.headers.set("Authorization", `Bearer ${token}`);
+  const token = authToken.get();
+
+  if (token) {
+    config.headers.set("Authorization", `Bearer ${token}`);
+  }
+
   return config;
 });
 
