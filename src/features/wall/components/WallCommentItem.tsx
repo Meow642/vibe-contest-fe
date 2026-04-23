@@ -37,6 +37,8 @@ function WallCommentItem({
   const dragPosition = useDragStore((state) => state.positions[comment.id]);
   const clearPosition = useDragStore((state) => state.clear);
   const setPosition = useDragStore((state) => state.setPosition);
+  const setSelfActive = useDragStore((state) => state.setSelfActive);
+  const clearSelfActive = useDragStore((state) => state.clearSelfActive);
 
   const isOwn = currentUserId === comment.author.id;
   const activePointerIdRef = useRef<number | null>(null);
@@ -103,17 +105,21 @@ function WallCommentItem({
       return;
     }
 
+    const currentX = renderedComment.x;
+    const currentY = renderedComment.y;
+
     activePointerIdRef.current = event.pointerId;
     pointerOffsetRef.current = {
-      dx: comment.x - pointer.x,
-      dy: comment.y - pointer.y,
+      dx: currentX - pointer.x,
+      dy: currentY - pointer.y,
     };
     lastValidPositionRef.current = {
-      x: comment.x,
-      y: comment.y,
+      x: currentX,
+      y: currentY,
     };
     lastSentAtRef.current = 0;
     event.currentTarget.setPointerCapture(event.pointerId);
+    setSelfActive(comment.id);
   }
 
   function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
@@ -181,14 +187,18 @@ function WallCommentItem({
     try {
       await onPersistDrag(comment.id, next);
     } catch {
-      setPosition(comment.id, {
-        actorId: currentUserId ?? comment.author.id,
-        rotation: comment.rotation,
-        x: lastValidPositionRef.current.x,
-        y: lastValidPositionRef.current.y,
-      });
+      if (activePointerIdRef.current !== null) {
+        return;
+      }
       clearPosition(comment.id);
+      clearSelfActive(comment.id);
+      return;
     }
+
+    if (activePointerIdRef.current !== null) {
+      return;
+    }
+    clearSelfActive(comment.id);
   }
 
   const isDragMode = selectedTool === "drag";

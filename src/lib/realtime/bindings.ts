@@ -32,10 +32,14 @@ export function applyRealtimeEvent(
       prependCommentToCache(queryClient, event.data.comment);
       return;
 
-    case "comment.updated":
-      useDragStore.getState().clear(event.data.comment.id);
+    case "comment.updated": {
+      const dragState = useDragStore.getState();
+      if (!dragState.activeSelf[event.data.comment.id]) {
+        dragState.clear(event.data.comment.id);
+      }
       replaceCommentInCache(queryClient, event.data.comment);
       return;
+    }
 
     case "comment.deleted":
       useDragStore.getState().clear(event.data.id);
