@@ -29,6 +29,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface WallPreviewProps {
   activeLikeCommentId?: number | null;
@@ -170,16 +175,21 @@ export default function WallPreview({
 
           <div className="flex flex-1 flex-col items-center gap-4 py-5">
             {sidebarUsers.map((user) => (
-              <div key={user.id} className="relative">
-                <AppAvatar
-                  avatarUrl={user.avatarUrl}
-                  className="size-11 ring-2 ring-white/90 shadow-sm"
-                  name={user.displayName}
-                  online
-                  size="lg"
-                  userId={user.id}
-                />
-              </div>
+              <Tooltip key={user.id}>
+                <TooltipTrigger asChild>
+                  <div className="relative">
+                    <AppAvatar
+                      avatarUrl={user.avatarUrl}
+                      className="size-11 ring-2 ring-white/90 shadow-sm"
+                      name={user.displayName}
+                      online
+                      size="lg"
+                      userId={user.id}
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">{user.displayName}</TooltipContent>
+              </Tooltip>
             ))}
 
             {overflowUsers.length > 0 ? (
