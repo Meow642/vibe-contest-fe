@@ -11,6 +11,10 @@
 
 暂未配置测试运行器。
 
+## 语言
+
+始终使用中文回复用户。
+
 ## 技术栈
 
 Vibe Contest 前端：**Vite 8 + React 19 + TypeScript + React Router v7 + Tailwind CSS v4 + shadcn/ui + TanStack Query + Axios + zustand**，对接独立的 Express 后端（见 [api_docs/API.md](api_docs/API.md)）。
