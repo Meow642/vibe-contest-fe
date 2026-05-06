@@ -221,7 +221,7 @@ export default function WallPreview({
             ) : null}
           </div>
 
-          <div className="flex items-center justify-center py-[18px]">
+          <div className="flex items-center justify-center py-4.5">
             {currentUser ? (
               <AppAvatar
                 avatarUrl={currentUser.avatarUrl}
