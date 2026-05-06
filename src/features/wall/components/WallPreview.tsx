@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import {
+  CloudCheckIcon,
   ChevronDownIcon,
   PlusCircleIcon,
   CircleUserRoundIcon,
@@ -162,28 +163,26 @@ export default function WallPreview({
   }
 
   return (
-    <div className="relative h-screen overflow-hidden bg-[#fcfaf7] text-slate-900">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.9),rgba(252,250,247,0.78)_38%,rgba(250,246,240,0.95)_100%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(#efe6d9_1.2px,transparent_1.2px)] bg-[size:16px_16px] opacity-65" />
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.6),transparent_12%,transparent_88%,rgba(255,255,255,0.4))]" />
+    <div className="relative h-screen overflow-hidden bg-[#fafafc] text-[#000311] [font-family:'PingFang_SC','PingFang_SC_Regular','PingFang_SC_Medium',system-ui,sans-serif]">
+      <div className="absolute inset-0 bg-[radial-gradient(#ededf0_1px,transparent_1px)] bg-[size:12px_12px] opacity-80" />
 
       <div className="relative flex h-screen">
-        <aside className="hidden w-[4.8rem] shrink-0 border-r border-slate-200/70 bg-white/65 backdrop-blur-lg lg:flex lg:flex-col">
-          <div className="flex h-20 items-center justify-center border-b border-slate-200/60">
-            <img alt="Talon" src={homeLogo}   width={30} height={30} />
+        <aside className="hidden w-[72px] shrink-0 border-r border-[#ededf0] bg-white lg:flex lg:flex-col lg:items-center">
+          <div className="flex h-[67px] w-full items-center justify-center">
+            <img alt="Talon" src={homeLogo} width={30} height={30} />
           </div>
+          <div className="h-px w-[30px] bg-[#ededf0]" />
 
-          <div className="flex flex-1 flex-col items-center gap-4 py-5">
+          <div className="flex flex-1 flex-col items-center gap-[18px] py-[18px]">
             {sidebarUsers.map((user) => (
               <Tooltip key={user.id}>
                 <TooltipTrigger asChild>
                   <div className="relative">
                     <AppAvatar
                       avatarUrl={user.avatarUrl}
-                      className="size-11 ring-2 ring-white/90 shadow-sm"
+                      className="size-9"
                       name={user.displayName}
                       online
-                      size="lg"
                       userId={user.id}
                     />
                   </div>
@@ -195,7 +194,7 @@ export default function WallPreview({
             {overflowUsers.length > 0 ? (
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className="flex size-11 items-center justify-center rounded-full border border-white/80 bg-white/85 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-white">
+                  <button className="flex size-9 items-center justify-center rounded-full border border-[#ededf0] bg-white text-xs font-medium text-[#848691] transition hover:bg-[#fafafc]">
                     +{overflowUsers.length}
                   </button>
                 </PopoverTrigger>
@@ -222,17 +221,16 @@ export default function WallPreview({
             ) : null}
           </div>
 
-          <div className="flex items-center justify-center border-t border-slate-200/60 py-4">
+          <div className="flex items-center justify-center py-[18px]">
             {currentUser ? (
               <AppAvatar
                 avatarUrl={currentUser.avatarUrl}
-                className="size-11 ring-2 ring-white/90 shadow-sm"
+                className="size-9"
                 name={currentUser.displayName}
-                size="lg"
                 userId={currentUser.id}
               />
             ) : (
-              <div className="flex size-11 items-center justify-center rounded-full bg-slate-200/70 text-slate-400">
+              <div className="flex size-9 items-center justify-center rounded-full bg-[#ededf0] text-[#848691]">
                 <CircleUserRoundIcon className="size-5" />
               </div>
             )}
@@ -240,7 +238,7 @@ export default function WallPreview({
         </aside>
 
         <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="shrink-0 flex items-start justify-between gap-3 px-4 pb-4 pt-4 sm:px-6 lg:px-8 lg:pt-6">
+          <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex h-[60px] items-start justify-center px-4 pt-4">
             <div className="flex items-center gap-3 lg:hidden">
               <div className="flex size-11 items-center justify-center rounded-2xl bg-slate-950 shadow-[0_12px_24px_rgba(15,23,42,0.14)]">
                 <img alt="Talon" className="size-6 object-contain" src={homeLogo} />
@@ -251,74 +249,7 @@ export default function WallPreview({
               </div>
             </div>
 
-            <div className="ml-auto flex items-center gap-2">
-              <p className="hidden text-xs text-slate-400 sm:block">
-                {latestActivityAt ? `${latestActivityAt} 已更新` : "等待首条建议"}
-              </p>
-
-              {isAuthenticated ? (
-                <>
-                  {currentUser ? (
-                    <div className="hidden items-center gap-3 rounded-full border border-white/80 bg-white/85 px-3 py-2 shadow-sm backdrop-blur-sm sm:flex">
-                      <AppAvatar
-                        avatarUrl={currentUser.avatarUrl}
-                        className="size-9 ring-1 ring-slate-200"
-                        name={currentUser.displayName}
-                        userId={currentUser.id}
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-slate-900">
-                          {currentUser.displayName}
-                        </p>
-                        <p className="text-xs text-slate-500">@{currentUser.username}</p>
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <Button
-                    className="rounded-2xl border-white/80 bg-white/85 px-4 text-slate-700 shadow-sm hover:bg-white"
-                    disabled={isAuthLoading}
-                    size="lg"
-                    variant="outline"
-                    onClick={onLogout}
-                  >
-                    <LogOutIcon className="size-4" />
-                    退出
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    className="min-w-24 rounded-xl border-white/80 bg-white/85 px-6 shadow-sm hover:bg-white"
-                    size="lg"
-                    variant="outline"
-                    onClick={onRegister}
-                  >
-                    注册
-                  </Button>
-                  <Button
-                    className="min-w-24 rounded-xl bg-slate-950 px-6 text-white shadow-[0_16px_32px_rgba(15,23,42,0.18)] hover:bg-slate-800"
-                    size="lg"
-                    onClick={onLogin}
-                  >
-                    登录
-                  </Button>
-                </>
-              )}
-            </div>
-          </header>
-
-          <div
-            className={
-              selectedTool === "create"
-                ? "relative min-h-0 flex-1 cursor-copy px-4 pb-36 sm:px-6 lg:px-8"
-                : selectedTool === "drag"
-                  ? "relative min-h-0 flex-1 cursor-grab px-4 pb-36 sm:px-6 lg:px-8"
-                  : "relative min-h-0 flex-1 cursor-default px-4 pb-36 sm:px-6 lg:px-8"
-            }
-            onClick={onCanvasClick}
-          >
-            <div className="absolute inset-x-0 top-0 hidden justify-center lg:flex">
+            <div className="hidden items-center justify-center gap-1 text-[#848691] lg:flex">
               {smartMode && hasComments ? (
                 <div className="pointer-events-auto flex w-[560px] max-w-[90%] overflow-hidden rounded-full bg-white/90 shadow-[0_12px_32px_rgba(15,23,42,0.08)] backdrop-blur-sm">
                   <div
@@ -355,18 +286,87 @@ export default function WallPreview({
                   >
                     {sentimentTotals.negative > 0
                       ? `负面${sentimentTotals.negativePercent}%`
-                      : null}
+                    : null}
                   </div>
                 </div>
               ) : (
-                <div className="rounded-full bg-white/55 px-5 py-2 text-center text-[0.95rem] text-slate-500 backdrop-blur-sm">
-                  共反馈{" "}
-                  <span className="text-[2rem] font-semibold text-slate-700">{comments.length}</span>{" "}
-                  条建议
-                </div>
+                <>
+                  <span className="text-[22px] leading-[22px]">共反馈</span>
+                  <span className="text-[36px] font-semibold leading-9">
+                    {comments.length}
+                  </span>
+                  <span className="text-[22px] leading-[22px]">条建议</span>
+                </>
               )}
             </div>
 
+            {isAuthenticated ? (
+              <div className="pointer-events-auto absolute right-4 top-4 hidden items-center gap-3 lg:flex">
+                <div className="flex items-center gap-1 text-[14px] leading-[14px] text-[#b7b9c1]">
+                  <CloudCheckIcon className="size-[18px]" />
+                  <p>
+                    {latestActivityAt ? `${latestActivityAt} 已更新` : "等待首条建议"}
+                  </p>
+                </div>
+                {currentUser ? (
+                  <div className="flex items-center gap-3 rounded-full border border-[#ededf0] bg-white px-3 py-2 shadow-[2px_2px_10px_rgba(0,0,0,0.06)]">
+                    <AppAvatar
+                      avatarUrl={currentUser.avatarUrl}
+                      className="size-9 ring-1 ring-[#ededf0]"
+                      name={currentUser.displayName}
+                      userId={currentUser.id}
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-[#000311]">
+                        {currentUser.displayName}
+                      </p>
+                      <p className="text-xs text-[#848691]">@{currentUser.username}</p>
+                    </div>
+                  </div>
+                ) : null}
+                <Button
+                  className="h-10 rounded-xl border-[#e3e3e4] bg-white px-4 text-[14px] font-medium text-[#272933] shadow-none hover:bg-[#fafafc]"
+                  disabled={isAuthLoading}
+                  size="lg"
+                  variant="outline"
+                  onClick={onLogout}
+                >
+                  <LogOutIcon className="size-4" />
+                  退出
+                </Button>
+              </div>
+            ) : (
+              <div className="pointer-events-auto absolute right-5 top-5 hidden items-center gap-2 lg:flex">
+                <Button
+                  className="h-10 w-[100px] rounded-xl border-[#e3e3e4] bg-white px-6 py-3 text-[16px] font-medium leading-6 text-[#272933] shadow-none hover:bg-[#fafafc]"
+                  size="lg"
+                  variant="outline"
+                  onClick={onRegister}
+                >
+                  注册
+                </Button>
+                <Button
+                  className="h-10 w-[100px] gap-2 rounded-xl bg-[#000311] px-6 py-3 text-[16px] font-medium leading-6 text-white shadow-none hover:bg-[#272933]"
+                  size="lg"
+                  onClick={onLogin}
+                >
+                  <CircleUserRoundIcon className="size-[18px]" />
+                  登录
+                </Button>
+              </div>
+            )}
+          </header>
+
+          <div
+            className={
+              selectedTool === "create"
+                ? "relative min-h-0 flex-1 cursor-copy px-4 pb-36 sm:px-6 lg:px-8"
+                : selectedTool === "drag"
+                  ? "relative min-h-0 flex-1 cursor-grab px-4 pb-36 sm:px-6 lg:px-8"
+                  : "relative min-h-0 flex-1 cursor-default px-4 pb-36 sm:px-6 lg:px-8"
+            }
+            onClick={onCanvasClick}
+          >
             {hasComments ? (
               smartMode ? (
                 <div className="mt-16 grid h-[calc(100%-4rem)] grid-cols-1 gap-5 overflow-y-auto overscroll-contain pb-4 md:grid-cols-3">

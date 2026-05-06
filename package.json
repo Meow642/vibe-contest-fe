@@ -8,6 +8,7 @@
     "dev:prod": "vite --mode production",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test:e2e": "playwright test",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -45,6 +46,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.59.1",
     "@tanstack/eslint-plugin-query": "^5.99.2",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",

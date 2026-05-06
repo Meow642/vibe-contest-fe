@@ -40,7 +40,7 @@ function CommentCard({
     <article
       data-comment-card="true"
       className={cn(
-        "relative flex w-[300px] flex-col items-center justify-center gap-4 rounded-[24px] p-6 transition-colors",
+        "relative flex w-[300px] flex-col items-center justify-center gap-4 rounded-[24px] p-6 shadow-[2px_2px_10px_rgba(0,0,0,0.1)] transition-colors",
         resolvedNoteClass,
         layout === "grid" ? "mx-auto" : "",
         onDoubleClick ? "cursor-pointer" : "",
